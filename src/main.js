@@ -12,20 +12,20 @@ require('he-date-format')
  * 定义生成图片的根目录
  * 定义背景图片路径
  */
-const rootPath = './qrcode'
-const background = './qrcode/back.jpg'
+const rootPath =  path.join(process.cwd(), 'data/qrcode')
+const background =  path.join(process.cwd(), 'data/background.jpg')
 
 /**
  * 获取文件名
  */
-const getFilename = function (ext) {
+const getFilename = function (ext, project) {
   let timestamp = _.now()
   let date = new Date(timestamp)
-  let dir = rootPath + '/' + date.format('yyyyMMdd')
-  let file = timestamp + '.' + ext
+  let dir = rootPath + '/' + project + '/' + date.format('yyyyMMdd')
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir)
   }
+  let file = timestamp + '.' + ext
   return dir + '/' + file
 }
 
@@ -33,14 +33,22 @@ const getFilename = function (ext) {
  * 生成二维码
  */
 router.get('/qrcode', ctx => {
+  // 检查参数
+  let project = ctx.query.project
+  if (_.isNil(project)) {
+    ctx.body = 'error'
+    return
+  }
+
+  // 生成二维码
   try {
     // 生成二维码对象
     let location = decodeURI(ctx.query.location)
     let img = qrcode.image(location)
 
     // 取保存文件名，并保存文件
-    let file = getFilename('png')
-    img.pipe(fs.createWriteStream(file))
+    let filename = getFilename('png', project)
+    img.pipe(fs.createWriteStream(filename))
 
     // 返回成功
     ctx.body = 'success'
@@ -53,15 +61,28 @@ router.get('/qrcode', ctx => {
  * 绘图
  */
 router.get('/draw', ctx => {
+  // 检查参数
+  let project = ctx.query.project
+  let qrpath = ctx.query.qrpath
+  if (_.isNil(project) || _.trim(project) == '') {
+    ctx.body = 'error'
+    return
+  }
+  if (_.isNil(qrpath) || _.trim(qrpath) == '') {
+    ctx.body = 'error'
+    return
+  }
+
+  // draw
   try {
     // 取保存文件名，并保存文件
-    let file = getFilename('jpg')
+    let filename = getFilename('jpg')
 
     // 取qrpath，制作图片
     let qrpath = decodeURI(ctx.query.qrpath)
     images(background)
       .draw(images(rootPath + '/' + qrpath), 50, 50)
-      .save(file, {
+      .save(filename, {
         quality: 80
       })
 
@@ -77,5 +98,5 @@ router.get('/draw', ctx => {
  */
 app.use(router.routes())
 app.use(router.allowedMethods())
-app.listen(3000)
+app.listen(3200)
 
