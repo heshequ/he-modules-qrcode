@@ -1,3 +1,7 @@
+# dir
+dist
+qrcode
+
 # Logs
 logs
 *.log
