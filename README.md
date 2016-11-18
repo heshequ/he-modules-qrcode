@@ -1,0 +1,1 @@
+# he-modules-qrcode
